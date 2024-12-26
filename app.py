@@ -5,24 +5,62 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import io
 
+# Define the CSS string for Source Code font and Footer Styling
+font_css = """
+<style>
+body {
+    font-family: 'Courier New', monospace;  /* Source code font */
+}
+
+.stTextInput, .stTextArea, .stNumberInput, .stSelectbox, .stRadio, .stSlider, .stButton, .stDownloadButton {
+    background-color: #333333;
+    color: #FFFFFF;
+    border: 1px solid #444444;
+    font-family: 'Courier New', monospace;  /* Source code font */
+}
+
+.stMarkdown {
+    color: #FFFFFF;
+    font-family: 'Courier New', monospace;  /* Source code font */
+}
+
+.stPlotlyChart {
+    background-color: #121212;
+}
+
+.stTitle, .stSubheader, .stHeader, .stText {
+    font-family: 'Courier New', monospace;  /* Source code font */
+}
+
+/* Footer Styling */
+.footer {
+    font-family: 'Courier New', monospace;
+    font-size: 19px;
+    color: #FFFFFF;
+    text-align: center;
+    padding: 20px;
+    # background-color: #333333;
+    border-radius: 10px;
+    margin-top: 40px;
+}
+
+.footer a {
+    color: #ff6347;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+</style>
+"""
+
+# Apply the CSS
+st.markdown(font_css, unsafe_allow_html=True)
+
 # Title and Introduction
-st.markdown(
-    """
-    <style>
-    body {
-        font-family: "Courier New", Courier, monospace;
-    }
-    .streamlit-expanderHeader, .streamlit-header, .streamlit-title {
-        font-family: "Courier New", Courier, monospace;
-    }
-    .stTextArea textarea {
-        font-family: "Courier New", Courier, monospace;
-    }
-    </style>
-    """, unsafe_allow_html=True
-)
-st.title("Automated EDA Tool :fire:")
-st.write("Upload your dataset and let this tool perform an Exploratory Data Analysis (EDA) step by step. (it works on simple dataset properly)")
+st.title("Automated EDA Tool 📊")
+st.write("Upload your dataset and let this tool perform a comprehensive Exploratory Data Analysis (EDA) step by step.")
 
 # File Upload Section
 uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
@@ -120,24 +158,13 @@ if uploaded_file:
         st.pyplot(fig)
         eda_report += f"- Histogram generated for column: {col}\n"
 
-    # Enhanced Scatter Plot (Color and Hover Effects)
-    st.write("### Enhanced Scatter Plot (Relationships Between Columns with Color and Hover Effects)")
+    # Simplified Scatter Plot
+    st.write("### Scatter Plot (Relationships Between Columns)")
     if numeric_columns.shape[1] >= 2:
         x_col = numeric_columns.columns[0]
         y_col = numeric_columns.columns[1]
-
-        # Check if there's a categorical column to color the scatter points
-        categorical_columns = df.select_dtypes(include=["object", "category"])
-        if not categorical_columns.empty:
-            color_col = categorical_columns.columns[0]
-            fig = px.scatter(df, x=x_col, y=y_col, color=color_col,
-                             hover_data=[x_col, y_col, color_col], # Display x, y, and color column data on hover
-                             title=f"Scatter Plot: {x_col} vs {y_col} (Colored by {color_col})")
-        else:
-            fig = px.scatter(df, x=x_col, y=y_col, 
-                             hover_data=[x_col, y_col],  # Display x and y data on hover
-                             title=f"Scatter Plot: {x_col} vs {y_col}")
-        
+        st.write(f"### Scatter Plot of {x_col} vs {y_col}")
+        fig = px.scatter(df, x=x_col, y=y_col, title=f"Scatter Plot: {x_col} vs {y_col}")
         st.plotly_chart(fig)
         eda_report += f"- Scatter plot generated for {x_col} vs {y_col}.\n"
     else:
@@ -190,3 +217,11 @@ if uploaded_file:
 
 else:
     st.write("Please upload a dataset to start the analysis.")
+
+# Stylish Footer Section with Centered and Source Code Font
+st.markdown("""
+<div class="footer">
+    <p>Created by: <strong>Sahil Nayak</strong></p>
+    <p>Visit my <a href="https://sahilnayak.vercel.app" target="_blank">Website</a></p>
+</div>
+""", unsafe_allow_html=True)
