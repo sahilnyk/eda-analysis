@@ -55,6 +55,12 @@ body {
 </style>
 """
 
+st.set_page_config(
+    page_title="eda by sahilnyk",  # Title of the browser tab
+    page_icon="assets/favicon1.png",  # Path to your favicon file
+    layout="centered"  # Optional: 'centered' or 'wide'
+)
+
 # Apply the CSS
 st.markdown(font_css, unsafe_allow_html=True)
 
