@@ -59,7 +59,7 @@ body {
 st.markdown(font_css, unsafe_allow_html=True)
 
 # Title and Introduction
-st.title("Automated EDA Tool 📊")
+st.title("Automated EDA Tool:fire:")
 st.write("Upload your dataset and let this tool perform a comprehensive Exploratory Data Analysis (EDA) step by step.")
 
 # File Upload Section
