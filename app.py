@@ -59,8 +59,8 @@ body {
 st.markdown(font_css, unsafe_allow_html=True)
 
 # Title and Introduction
-st.title("Automated EDA Tool:fire:")
-st.write("Upload your dataset and let this tool perform a comprehensive Exploratory Data Analysis (EDA) step by step.")
+st.title("Automated EDA Tool :fire:")
+st.write("Upload your dataset and let this tool perform some basics Exploratory Data Analysis (EDA) operation step by step.")
 
 # File Upload Section
 uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
@@ -221,7 +221,7 @@ else:
 # Stylish Footer Section with Centered and Source Code Font
 st.markdown("""
 <div class="footer">
-    <p>Created by: <strong>Sahil Nayak</strong></p>
+    <p>Created by: <strong>Sahil Nayak | sahilnyk</strong></p>
     <p>Visit my <a href="https://sahilnayak.vercel.app" target="_blank">Website</a></p>
 </div>
 """, unsafe_allow_html=True)
