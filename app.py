@@ -3,231 +3,121 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.express as px
-import io
+from sklearn.preprocessing import MinMaxScaler
 
-# Define the CSS string for Source Code font and Footer Styling
-font_css = """
-<style>
-body {
-    font-family: 'Courier New', monospace;  /* Source code font */
-}
-
-.stTextInput, .stTextArea, .stNumberInput, .stSelectbox, .stRadio, .stSlider, .stButton, .stDownloadButton {
-    background-color: #333333;
-    color: #FFFFFF;
-    border: 1px solid #444444;
-    font-family: 'Courier New', monospace;  /* Source code font */
-}
-
-.stMarkdown {
-    color: #FFFFFF;
-    font-family: 'Courier New', monospace;  /* Source code font */
-}
-
-.stPlotlyChart {
-    background-color: #121212;
-}
-
-.stTitle, .stSubheader, .stHeader, .stText {
-    font-family: 'Courier New', monospace;  /* Source code font */
-}
-
-/* Footer Styling */
-.footer {
-    font-family: 'Courier New', monospace;
-    font-size: 19px;
-    color: #FFFFFF;
-    text-align: center;
-    padding: 20px;
-    # background-color: #333333;
-    border-radius: 10px;
-    margin-top: 40px;
-}
-
-.footer a {
-    color: #ff6347;
-    text-decoration: none;
-}
-
-.footer a:hover {
-    text-decoration: underline;
-}
-</style>
-"""
-
+# Page Configuration
 st.set_page_config(
-    page_title="eda by sahilnyk",  # Title of the browser tab
-    page_icon="assets/favicon1.png",  # Path to your favicon file
-    layout="centered"  # Optional: 'centered' or 'wide'
+    page_title="EDA Tool by Sahil Nayak",
+    page_icon=":bar_chart:",
+    layout="centered"
 )
 
-# Apply the CSS
-st.markdown(font_css, unsafe_allow_html=True)
-
 # Title and Introduction
-st.title("Automated EDA Tool :fire:")
-st.write("Upload your dataset and let this tool perform some basics Exploratory Data Analysis (EDA) operation step by step.")
+st.title("Exploratory Data Analysis Tool")
+st.write("Upload your dataset and perform step-by-step EDA operations.")
 
 # File Upload Section
 uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
 
-# Initialize EDA Report
-eda_report = ""
+# Helper Functions
+def load_dataset(file):
+    if file.name.endswith(".csv"):
+        return pd.read_csv(file)
+    return pd.read_excel(file)
 
-if uploaded_file:
-    # Load the dataset
-    if uploaded_file.name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
-    
-    # Convert DataFrame to Arrow-compatible types
-    df = df.convert_dtypes()
-
-    # Step 1: Basic Information
-    st.write("## Step 1: Basic Dataset Information")
-    st.write("### Shape and Structure")
-    st.write("**Rows and Columns:**")
-    st.write(df.shape)
-    eda_report += f"- The dataset contains {df.shape[0]} rows and {df.shape[1]} columns.\n"
-
-    st.write("**Column Data Types:**")
+def display_basic_info(df):
+    st.subheader("Basic Information")
+    st.write(f"**Shape:** {df.shape[0]} rows, {df.shape[1]} columns")
+    st.write("**Data Types:")
     st.write(df.dtypes)
-    eda_report += f"- Column data types:\n{df.dtypes.to_string()}\n"
+    st.write("**Preview:")
+    st.write(df.head())
 
-    st.write("**Dataset Overview:**")
-    buffer = io.StringIO()
-    df.info(buf=buffer)
-    st.text(buffer.getvalue())
-    eda_report += f"- Dataset Info:\n{buffer.getvalue()}\n"
+def handle_missing_data(df):
+    st.subheader("Handle Missing Data")
+    missing_data = df.isnull().sum()
+    st.write("**Columns with Missing Values:**")
+    st.write(missing_data[missing_data > 0])
 
-    # Step 2: Null Values
-    st.write("## Step 2: Handling Missing Values")
-    st.write("Let's identify and handle missing values in the dataset.")
-    null_counts = df.isnull().sum()
-    st.write("**Missing Values by Column:**")
-    st.write(null_counts[null_counts > 0])
-    eda_report += f"- Missing Values:\n{null_counts[null_counts > 0].to_string()}\n"
-
-    if null_counts.sum() > 0:
-        st.write("There are missing values in the dataset. Removing rows with missing values...")
+    if st.button("Remove Missing Data"):
         df.dropna(inplace=True)
-        st.write("Missing values removed.")
-        eda_report += "- Missing values have been removed.\n"
-    else:
-        st.write("No missing values found in the dataset.")
-        eda_report += "- No missing values found.\n"
+        st.success("Removed rows with missing data.")
+    return df
 
-    # Step 3: Mathematical Operations
-    st.write("## Step 3: Mathematical Operations")
-    st.write("Calculating mean, median, and mode for numeric columns only.")
+def remove_duplicates(df):
+    st.subheader("Remove Duplicates")
+    duplicates = df.duplicated().sum()
+    st.write(f"**Duplicate Rows:** {duplicates}")
 
-    numeric_columns = df.select_dtypes(include=["number"])
-    if numeric_columns.empty:
-        st.write("No numeric columns found for mathematical operations.")
-        eda_report += "- No numeric columns for mathematical operations.\n"
-    else:
-        # Calculate Mean
-        st.write("### Mean")
-        mean_values = numeric_columns.mean()
-        st.write(mean_values)
-        eda_report += f"- Mean Values:\n{mean_values.to_string()}\n"
+    if st.button("Remove Duplicate Rows"):
+        df.drop_duplicates(inplace=True)
+        st.success("Duplicate rows removed.")
+    return df
 
-        # Calculate Median
-        st.write("### Median")
-        median_values = numeric_columns.median()
-        st.write(median_values)
-        eda_report += f"- Median Values:\n{median_values.to_string()}\n"
-
-        # Calculate Mode
-        st.write("### Mode")
-        mode_values = numeric_columns.mode().iloc[0]
-        st.write(mode_values)
-        eda_report += f"- Mode Values:\n{mode_values.to_string()}\n"
-
-    # Step 4: Visualization
-    st.write("## Step 4: Visualizing the Data")
-
-    # Box Plot
-    st.write("### Box Plots (Outlier Detection)")
-    for col in numeric_columns.columns:
+def detect_outliers(df):
+    st.subheader("Outlier Detection")
+    numeric_cols = df.select_dtypes(include=['number']).columns
+    for col in numeric_cols:
+        st.write(f"**{col}:**")
         fig, ax = plt.subplots()
         sns.boxplot(x=df[col], ax=ax)
         st.pyplot(fig)
-        eda_report += f"- Box plot generated for column: {col}\n"
 
-    # Histogram
-    st.write("### Histogram (Frequency Distribution)")
-    for col in numeric_columns.columns:
+def apply_scaling(df):
+    st.subheader("Apply Min-Max Scaling")
+    numeric_cols = df.select_dtypes(include=['number']).columns
+
+    if st.button("Apply Scaling"):
+        scaler = MinMaxScaler()
+        df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+        st.success("Scaling applied.")
+    return df
+
+def display_correlation_heatmap(df):
+    st.subheader("Correlation Heatmap")
+    numeric_cols = df.select_dtypes(include=['number'])
+
+    if not numeric_cols.empty:
+        fig, ax = plt.subplots()
+        sns.heatmap(numeric_cols.corr(), annot=True, cmap="coolwarm", ax=ax)
+        st.pyplot(fig)
+
+def visualize_data(df):
+    st.subheader("Data Visualization")
+
+    st.write("**Histograms:**")
+    for col in df.select_dtypes(include=['number']).columns:
         fig, ax = plt.subplots()
         sns.histplot(df[col], kde=True, ax=ax)
         st.pyplot(fig)
-        eda_report += f"- Histogram generated for column: {col}\n"
 
-    # Simplified Scatter Plot
-    st.write("### Scatter Plot (Relationships Between Columns)")
-    if numeric_columns.shape[1] >= 2:
-        x_col = numeric_columns.columns[0]
-        y_col = numeric_columns.columns[1]
-        st.write(f"### Scatter Plot of {x_col} vs {y_col}")
-        fig = px.scatter(df, x=x_col, y=y_col, title=f"Scatter Plot: {x_col} vs {y_col}")
-        st.plotly_chart(fig)
-        eda_report += f"- Scatter plot generated for {x_col} vs {y_col}.\n"
-    else:
-        st.write("Not enough numeric columns for scatter plot.")
-        eda_report += "- Not enough numeric columns for scatter plot.\n"
-
-    # Pie Chart for Categorical Data
-    st.write("### Pie Chart (Categorical Data Distribution)")
-    categorical_columns = df.select_dtypes(include=["object", "category"])
-    if not categorical_columns.empty:
-        st.write("### Pie Chart for Categorical Columns")
-        for col in categorical_columns.columns:
-            pie_data = df[col].value_counts()
-            fig, ax = plt.subplots()
-            ax.pie(pie_data, labels=pie_data.index, autopct="%1.1f%%", startangle=90)
-            ax.axis("equal")  # Equal aspect ratio ensures that pie chart is circular.
-            st.pyplot(fig)
-            eda_report += f"- Pie chart generated for column: {col}\n"
-    else:
-        st.write("No categorical columns available for pie chart.")
-        eda_report += "- No categorical columns for pie chart.\n"
-
-    # Step 5: Feature Selection
-    st.write("## Step 5: Feature Selection")
-    st.write("### Correlation Heatmap")
-    if not numeric_columns.empty:
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.heatmap(numeric_columns.corr(), annot=True, cmap="coolwarm", ax=ax)
+    st.write("**Bar Charts:**")
+    for col in df.select_dtypes(include=['object', 'category']).columns:
+        fig, ax = plt.subplots()
+        df[col].value_counts().plot(kind="bar", ax=ax)
         st.pyplot(fig)
-        eda_report += "- Correlation heatmap generated for numeric columns.\n"
-    else:
-        st.write("No numeric columns available for correlation analysis.")
-        eda_report += "- No numeric columns for correlation analysis.\n"
 
-    # Step 6: Skewness and Kurtosis
-    st.write("## Step 6: Skewness and Kurtosis")
-    for col in numeric_columns.columns:
-        skewness = df[col].skew()
-        kurtosis = df[col].kurt()
-        st.write(f"**{col}:** Skewness = {skewness:.2f}, Kurtosis = {kurtosis:.2f}")
-        eda_report += f"- {col}: Skewness = {skewness:.2f}, Kurtosis = {kurtosis:.2f}\n"
+    st.write("**Scatter Plot:**")
+    numeric_cols = df.select_dtypes(include=['number']).columns
+    if len(numeric_cols) >= 2:
+        fig = px.scatter(df, x=numeric_cols[0], y=numeric_cols[1])
+        st.plotly_chart(fig)
 
-    # Documentation Output
-    st.write("## EDA Report")
-    st.text_area("Generated EDA Report", eda_report, height=400)
+# Main EDA Workflow
+if uploaded_file:
+    df = load_dataset(uploaded_file)
 
-    # Downloadable Outputs
-    eda_report_file = eda_report.encode("utf-8")
-    st.download_button("Download EDA Report", data=eda_report_file, file_name="eda_report.txt", mime="text/plain")
+    st.header("Step-by-Step Analysis")
+    display_basic_info(df)
+    df = handle_missing_data(df)
+    df = remove_duplicates(df)
+    detect_outliers(df)
+    df = apply_scaling(df)
+    display_correlation_heatmap(df)
+    visualize_data(df)
 
+    st.subheader("Download Processed Dataset")
+    processed_file = df.to_csv(index=False).encode("utf-8")
+    st.download_button("Download CSV", data=processed_file, file_name="processed_data.csv")
 else:
-    st.write("Please upload a dataset to start the analysis.")
-
-# Stylish Footer Section with Centered and Source Code Font
-st.markdown("""
-<div class="footer">
-    <p>Created by: <strong>Sahil Nayak | sahilnyk</strong></p>
-    <p>Visit my <a href="https://sahilnayak.vercel.app" target="_blank">Website</a></p>
-</div>
-""", unsafe_allow_html=True)
+    st.info("Upload a file to start EDA.")
