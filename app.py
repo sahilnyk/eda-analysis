@@ -7,45 +7,14 @@ from sklearn.preprocessing import MinMaxScaler
 
 # Page Configuration
 st.set_page_config(
-    page_title="EDA Tool by Sahil Nayak",
-    page_icon=":bar_chart:",
-    layout="centered"
+    page_title="eda by sahilnyk",
+    layout="centered",
+    page_icon="assets/favicon1.png"
 )
 
-# Custom CSS for light/dark mode and M PLUS Code font
-st.markdown("""
-    <style>
-        /* Load Google font - M PLUS Code */
-        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Code+Latin:wght@300;400;500&display=swap');
-
-        /* Set the body font to M PLUS Code */
-        body {
-            font-family: 'M PLUS Code Latin', monospace;
-        }
-
-        /* Dark Mode Styling */
-        .dark-mode {
-            background-color: #121212;
-            color: white;
-        }
-
-        /* Light Mode Styling */
-        .light-mode {
-            background-color: #f5f5f5;
-            color: black;
-        }
-
-        /* Header Styling */
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'M PLUS Code Latin', monospace;
-        }
-
-    </style>
-""", unsafe_allow_html=True)
-
 # Title and Introduction
-st.title("Exploratory Data Analysis Tool")
-st.write("Upload your dataset and perform step-by-step basic EDA operations.")
+st.title("Exploratory Data Analysis Basic Operations")
+st.write("Upload your dataset so that we can perform basic operations and give you more information about the data.")
 
 # File Upload Section
 uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["csv", "xlsx"])
@@ -68,11 +37,11 @@ def make_arrow_compatible(df):
 
 def display_basic_info(df):
     st.subheader("Basic Information")
-    st.write(f"Shape: {df.shape[0]} rows, {df.shape[1]} columns")
+    st.write(f"**Shape:** {df.shape[0]} rows, {df.shape[1]} columns")
     st.write("Data Types:")
     st.write(df.dtypes)
     st.write("Preview:")
-    st.write(df.head())
+    st.write(df.head(10))
 
 def display_feature_types(df):
     st.subheader("Feature Types")
@@ -130,30 +99,44 @@ def display_correlation_heatmap(df):
     numeric_cols = df.select_dtypes(include=['int', 'float'])
 
     if not numeric_cols.empty:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10, 8))
         sns.heatmap(numeric_cols.corr(), annot=True, cmap="coolwarm", ax=ax)
         st.pyplot(fig)
 
 def visualize_data(df):
     st.subheader("Data Visualization")
 
-    st.write("Histograms:")
+    # Histograms with KDE (Kernel Density Estimation)
+    st.write("Histograms with KDE:")
     for col in df.select_dtypes(include=['int', 'float']).columns:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(8, 6))
         sns.histplot(df[col], kde=True, ax=ax)
+        ax.set_title(f"Distribution of {col}")
         st.pyplot(fig)
 
-    st.write("Bar Charts:")
+    # Bar Charts for Categorical Features
+    st.write("Bar Charts for Categorical Features:")
     for col in df.select_dtypes(include=['object']).columns:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(8, 6))
         df[col].value_counts().plot(kind="bar", ax=ax)
+        ax.set_title(f"Frequency of {col}")
         st.pyplot(fig)
 
+    # Scatter Plot with Plotly
     st.write("Scatter Plot:")
     numeric_cols = df.select_dtypes(include=['int', 'float']).columns
     if len(numeric_cols) >= 2:
-        fig = px.scatter(df, x=numeric_cols[0], y=numeric_cols[1])
+        st.write("Choose the X and Y axis for the scatter plot:")
+        x_axis = st.selectbox("Select X axis", numeric_cols)
+        y_axis = st.selectbox("Select Y axis", numeric_cols)
+
+        fig = px.scatter(df, x=x_axis, y=y_axis, color=df[x_axis], title=f"Scatter Plot of {x_axis} vs {y_axis}")
         st.plotly_chart(fig)
+
+    # Pairplot (Seaborn) for all numerical columns
+    st.write("Pairplot for Numerical Features:")
+    pairplot_fig = sns.pairplot(df.select_dtypes(include=['int', 'float']))
+    st.pyplot(pairplot_fig)
 
 # Main EDA Workflow
 if uploaded_file:
@@ -161,11 +144,13 @@ if uploaded_file:
 
     if df is not None:
         df = make_arrow_compatible(df)
-        st.header("Step-by-Step Analysis")
+
+        # Display basic information and features
+        st.header("basics EDA operations")
         display_basic_info(df)
         display_feature_types(df)  # Display feature types
 
-        # Apply operations in order for both numerical and categorical features
+        # Apply operations
         df = handle_missing_data(df)
         df = remove_duplicates(df)
         detect_outliers(df)
@@ -173,8 +158,9 @@ if uploaded_file:
         display_correlation_heatmap(df)
         visualize_data(df)
 
+        # Allow downloading of the processed file
         st.subheader("Download Processed Dataset")
         processed_file = df.to_csv(index=False).encode("utf-8")
         st.download_button("Download CSV", data=processed_file, file_name="processed_data.csv")
 else:
-    st.info("Upload a file to start EDA.")
+    st.info("Upload the dataset for operations.")
