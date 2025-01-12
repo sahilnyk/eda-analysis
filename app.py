@@ -21,16 +21,31 @@ uploaded_file = st.file_uploader("Upload your dataset (CSV or Excel)", type=["cs
 
 # Helper Functions
 def load_dataset(file):
-    if file.name.endswith(".csv"):
-        return pd.read_csv(file)
-    return pd.read_excel(file)
+    try:
+        if file.name.endswith(".csv"):
+            return pd.read_csv(file, error_bad_lines=False, warn_bad_lines=True)
+        return pd.read_excel(file)
+    except Exception as e:
+        st.error(f"Failed to load dataset: {e}")
+        return None
+
+def make_arrow_compatible(df):
+    try:
+        for col in df.columns:
+            if pd.api.types.is_object_dtype(df[col]):
+                df[col] = df[col].astype(str)
+            elif pd.api.types.is_categorical_dtype(df[col]):
+                df[col] = df[col].astype(str)
+    except Exception as e:
+        st.warning(f"Arrow compatibility adjustments failed: {e}")
+    return df
 
 def display_basic_info(df):
     st.subheader("Basic Information")
     st.write(f"**Shape:** {df.shape[0]} rows, {df.shape[1]} columns")
-    st.write("**Data Types:")
+    st.write("**Data Types:**")
     st.write(df.dtypes)
-    st.write("**Preview:")
+    st.write("**Preview:**")
     st.write(df.head())
 
 def handle_missing_data(df):
@@ -106,18 +121,20 @@ def visualize_data(df):
 # Main EDA Workflow
 if uploaded_file:
     df = load_dataset(uploaded_file)
+    if df is not None:
+        df = make_arrow_compatible(df)
 
-    st.header("Step-by-Step Analysis")
-    display_basic_info(df)
-    df = handle_missing_data(df)
-    df = remove_duplicates(df)
-    detect_outliers(df)
-    df = apply_scaling(df)
-    display_correlation_heatmap(df)
-    visualize_data(df)
+        st.header("Step-by-Step Analysis")
+        display_basic_info(df)
+        df = handle_missing_data(df)
+        df = remove_duplicates(df)
+        detect_outliers(df)
+        df = apply_scaling(df)
+        display_correlation_heatmap(df)
+        visualize_data(df)
 
-    st.subheader("Download Processed Dataset")
-    processed_file = df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download CSV", data=processed_file, file_name="processed_data.csv")
+        st.subheader("Download Processed Dataset")
+        processed_file = df.to_csv(index=False).encode("utf-8")
+        st.download_button("Download CSV", data=processed_file, file_name="processed_data.csv")
 else:
     st.info("Upload a file to start EDA.")
